@@ -78,7 +78,7 @@ def handle_input(user_message):
     salary, currency = extract_financial_info(user_message)
     
     if salary:
-        st.session_state.history.append(Message("ai", f"\n\n راتبك هو {salary} {currency}."))
+        st.session_state.history.append(Message("ai", f"\n راتبك هو {salary} {currency}."))
         st.session_state.salary = salary
 
         # Show investment options
