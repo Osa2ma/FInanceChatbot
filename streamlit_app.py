@@ -68,8 +68,8 @@ def explain_investment_options():
     📊 - الصناديق المشتركة: العائد السنوي المتوقع 5%. استثمارات متنوعة ومخاطرة معتدلة.
     
     يمكنك اختيار واحدة بناءً على مستوى المخاطرة الذي تتحمله وأهدافك.
-    """
-    return explanation.strip()
+    """.strip()
+    return explanation
 
 # Provide more details about the chosen investment type
 def provide_investment_details(investment_type):
