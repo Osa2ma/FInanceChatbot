@@ -26,9 +26,12 @@ class Message:
 
 # Load custom CSS
 def load_css():
-    with open("../static/styles.css", "r") as f:
-        css = f"<style>{f.read()}</style>"
-        st.markdown(css, unsafe_allow_html=True)
+    try:
+        with open("static/styles.css", "r") as f:
+            css = f"<style>{f.read()}</style>"
+            st.markdown(css, unsafe_allow_html=True)
+    except FileNotFoundError:
+        pass  # Skip if the CSS file is not available
 
 # Initialize session state to track history
 def initialize_session_state():
