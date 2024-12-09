@@ -69,7 +69,7 @@ def explain_investment_options():
     
     يمكنك اختيار واحدة بناءً على مستوى المخاطرة الذي تتحمله وأهدافك.
     """
-    return explanation
+    return explanation.strip()
 
 # Provide more details about the chosen investment type
 def provide_investment_details(investment_type):
