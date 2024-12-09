@@ -96,10 +96,15 @@ def handle_input(user_message):
     else:
         st.session_state.history.append(Message("ai", "عذراً، لم أتمكن من استخراج معلومات الراتب. هل يمكنك المحاولة مرة أخرى؟"))
 
+    # Force rerun to update the UI
+    st.experimental_rerun()
+
 # Streamlit Chatbot GUI
-st.title("Finance Chatbot 🤖")
+
 load_css()  # Load custom CSS
 initialize_session_state()
+
+st.title("Finance Chatbot 🤖")
 
 # Display chat history
 for chat in st.session_state.history:
