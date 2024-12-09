@@ -44,10 +44,13 @@ def initialize_session_state():
 
 # Function to parse and extract financial information
 def extract_financial_info(text):
-    salary_match = re.search(r'(\d+(\.\d+)?)\s*(جنيه|دولار|يورو|جنيه استرليني)?', text.lower())
-    salary = float(salary_match.group(1)) if salary_match else None
-    currency = salary_match.group(3).upper() if salary_match and salary_match.group(3) else 'جنيه'
-    return salary, currency
+    salary_match = re.search(r'(\d+(\.\d+)?)\s*(جنيه|دولار|يورو|استرليني|ريال)?', text.lower())
+    if salary_match:
+        salary = float(salary_match.group(1))
+        currency = salary_match.group(3).upper() if salary_match.group(3) else 'جنيه'
+        return salary, currency
+    return None, None  # Return None if no match
+
 
 # Investment calculator
 def calculate_profit(investment_amount, investment_type, years=1):
@@ -83,18 +86,21 @@ def sanitize_text(text):
 # Chatbot logic handler
 def handle_input(user_message):
     salary, currency = extract_financial_info(user_message)
-    
+
     if salary:
-        st.session_state.history.append(Message("ai", f"\n راتبك هو {salary} {currency}."))
         st.session_state.salary = salary
-
+        st.session_state.history.append(Message("ai", f"راتبك هو {salary} {currency}."))
+        
         # Show investment options
-        st.session_state.history.append(Message("ai", sanitize_text(explain_investment_options())))
-
-        # Ask for investment type
+        st.session_state.history.append(Message("ai", explain_investment_options()))
         st.session_state.history.append(Message("ai", "ما نوع الاستثمار الذي ترغب فيه؟ (الأسهم، السندات، العقارات، الصناديق المشتركة)"))
+    elif user_message.strip().lower() in investment_options.keys():
+        # Store investment type
+        st.session_state.investment_type = user_message.strip().lower()
+        st.session_state.history.append(Message("ai", provide_investment_details(st.session_state.investment_type)))
     else:
-        st.session_state.history.append(Message("ai", "عذراً، لم أتمكن من استخراج معلومات الراتب. هل يمكنك المحاولة مرة أخرى؟"))
+        st.session_state.history.append(Message("ai", "عذراً، لم أتمكن من فهم طلبك. هل يمكنك المحاولة مرة أخرى؟"))
+
 
 
 
@@ -105,11 +111,17 @@ initialize_session_state()
 
 # Display chat history
 # Display chat history
+
+
+# Modify the display of messages in the chat history
 for chat in st.session_state.history:
     if chat.origin == "human":
+        # Escape only the user's input
         st.markdown(f"<div style='text-align: left; direction: ltr;'><b>👤</b> {sanitize_text(chat.message)}</div>", unsafe_allow_html=True)
     else:
-        st.markdown(f"<div style='text-align: right; direction: rtl;'><b>🤖</b> {sanitize_text(chat.message)}</div>", unsafe_allow_html=True)
+        # Directly render HTML for chatbot responses
+        st.markdown(f"<div style='text-align: right; direction: rtl;'><b>🤖</b> {chat.message}</div>", unsafe_allow_html=True)
+
 
 
 # User input form
