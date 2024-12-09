@@ -38,6 +38,8 @@ def initialize_session_state():
         st.session_state.investment_type = None
     if "salary" not in st.session_state:
         st.session_state.salary = None
+    if "currency" not in st.session_state:
+        st.session_state.currency = "جنيه"
 
 # Function to parse and extract financial information
 def extract_financial_info(text):
@@ -80,6 +82,7 @@ def handle_input(user_message):
     if salary:
         st.session_state.history.append(Message("ai", f"الخطوة 1: راتبك هو {salary} {currency}."))
         st.session_state.salary = salary
+        st.session_state.currency = currency
 
         # Show investment options
         st.session_state.history.append(Message("ai", explain_investment_options()))
@@ -97,9 +100,9 @@ initialize_session_state()
 # Display chat history
 for chat in st.session_state.history:
     if chat.origin == "human":
-        st.markdown(f"<div style='text-align: right;'><b>👤 </b> {chat.message}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='text-align: right;'><b>👤</b> {chat.message}</div>", unsafe_allow_html=True)
     else:
-        st.markdown(f"<div style='text-align: left;'><b>🤖 ا</b> {chat.message}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='text-align: left;'><b>🤖</b> {chat.message}</div>", unsafe_allow_html=True)
 
 # User input form
 with st.form("chat_form", clear_on_submit=True):
@@ -111,20 +114,22 @@ with st.form("chat_form", clear_on_submit=True):
         st.session_state.history.append(Message("human", user_message))
         handle_input(user_message)
 
-# If investment type was provided, ask for details about the investment
-if st.session_state.investment_type:
-    investment_type = st.selectbox("اختر نوع الاستثمار", list(investment_options.keys()))
-    st.session_state.history.append(Message("human", f"لقد اخترت {investment_type}."))
-    st.session_state.history.append(Message("ai", provide_investment_details(investment_type)))
+# If salary has been extracted, ask for investment type
+if st.session_state.salary:
+    if st.session_state.investment_type is None:
+        investment_type = st.selectbox("اختر نوع الاستثمار", list(investment_options.keys()))
+        st.session_state.investment_type = investment_type
+        st.session_state.history.append(Message("human", f"لقد اخترت {investment_type}."))
+        st.session_state.history.append(Message("ai", provide_investment_details(investment_type)))
 
-# Show investment profit calculation after asking the relevant questions
-if st.session_state.salary and st.session_state.investment_type:
+# If investment type is selected, ask for years and investment amount
+if st.session_state.investment_type:
     years = st.slider("كم عدد السنوات التي ترغب في الاستثمار خلالها؟", 1, 20)
     investment_amount = st.number_input(f"كم من {st.session_state.salary} تريد استثماره؟", min_value=1.0)
 
     if st.button("احسب الربح"):
         profit = calculate_profit(investment_amount, st.session_state.investment_type, years)
-        if profit:
+        if profit is not None:
             st.session_state.history.append(
-                Message("ai", f"بناءً على عائد سنوي قدره {investment_options[st.session_state.investment_type]} لمدة {years} سنوات، سيكون إجمالي الربح الخاص بك: {profit:.2f}.")
+                Message("ai", f"بناءً على عائد سنوي قدره {investment_options[st.session_state.investment_type]} لمدة {years} سنوات، سيكون إجمالي الربح الخاص بك: {profit:.2f} {st.session_state.currency}.")
             )
