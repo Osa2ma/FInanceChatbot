@@ -26,7 +26,7 @@ class Message:
 
 # Load custom CSS
 def load_css():
-    with open("static/styles.css", "r") as f:
+    with open("../static/styles.css", "r") as f:
         css = f"<style>{f.read()}</style>"
         st.markdown(css, unsafe_allow_html=True)
 
@@ -58,7 +58,7 @@ def calculate_profit(investment_amount, investment_type, years=1):
 # Detailed breakdown of investment options
 def explain_investment_options():
     explanation = """
-    💼 إليك بعض الخيارات الاستثمارية للنظر فيها:
+    💼 إليك بعض الخيارات الاستثمارية للنظر فيها:\n
     📈 - الأسهم: العائد السنوي المتوقع 8%. مخاطرة عالية، ولكن عوائد محتملة عالية.
     💵 - السندات: العائد السنوي المتوقع 4%. مخاطرة أقل، وعوائد ثابتة.
     🏠 - العقارات: العائد السنوي المتوقع 6%. استثمار آمن، مع نمو طويل الأجل.
