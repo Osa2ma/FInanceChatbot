@@ -97,9 +97,9 @@ initialize_session_state()
 # Display chat history
 for chat in st.session_state.history:
     if chat.origin == "human":
-        st.markdown(f"<div style='text-align: right;'><b>👤 أنت:</b> {chat.message}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='text-align: right;'><b>👤 </b> {chat.message}</div>", unsafe_allow_html=True)
     else:
-        st.markdown(f"<div style='text-align: left;'><b>🤖 البوت:</b> {chat.message}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='text-align: left;'><b>🤖 ا</b> {chat.message}</div>", unsafe_allow_html=True)
 
 # User input form
 with st.form("chat_form", clear_on_submit=True):
