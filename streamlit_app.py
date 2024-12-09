@@ -94,12 +94,14 @@ st.title("Finance Chatbot 🤖")
 load_css()  # Load custom CSS
 initialize_session_state()
 
-# Display chat history with user and bot message alignment
+# Display chat history
+# Display chat history
 for chat in st.session_state.history:
     if chat.origin == "human":
         st.markdown(f"<div style='text-align: left; direction: ltr;'><b>👤</b> {chat.message}</div>", unsafe_allow_html=True)
     else:
         st.markdown(f"<div style='text-align: right; direction: rtl;'><b>🤖</b> {chat.message}</div>", unsafe_allow_html=True)
+
 
 # User input form
 with st.form("chat_form", clear_on_submit=True):
