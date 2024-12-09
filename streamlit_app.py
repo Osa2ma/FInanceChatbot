@@ -1,7 +1,14 @@
 import re
 from dataclasses import dataclass
+from typing import Literal
 import streamlit as st
 import html
+
+from langchain import OpenAI
+from langchain.callbacks import get_openai_callback
+from langchain.chains import ConversationChain
+from langchain.chains.conversation.memory import ConversationSummaryMemory
+import streamlit.components.v1 as components
 
 # Define some basic investment options with expected annual returns
 investment_options = {
@@ -22,35 +29,44 @@ investment_details = {
 @dataclass
 class Message:
     """Class for keeping track of a chat message."""
-    origin: str  # "human" or "ai"
+    origin: Literal["human", "ai"]
     message: str
 
-# Load custom CSS
 def load_css():
-    try:
-        with open("static/styles.css", "r") as f:
-            css = f"<style>{f.read()}</style>"
-            st.markdown(css, unsafe_allow_html=True)
-    except FileNotFoundError:
-        pass  # Skip if the CSS file is not available
+    with open("static/styles.css", "r") as f:
+        css = f"<style>{f.read()}</style>"
+        st.markdown(css, unsafe_allow_html=True)
 
-# Initialize session state to track history
 def initialize_session_state():
     if "history" not in st.session_state:
         st.session_state.history = []
-    if "investment_type" not in st.session_state:
-        st.session_state.investment_type = None
-    if "salary" not in st.session_state:
-        st.session_state.salary = None
+    if "token_count" not in st.session_state:
+        st.session_state.token_count = 0
+    if "conversation" not in st.session_state:
+        llm = OpenAI(
+            temperature=0,
+            openai_api_key=st.secrets["openai_api_key"],
+            model_name="text-davinci-003"
+        )
+        st.session_state.conversation = ConversationChain(
+            llm=llm,
+            memory=ConversationSummaryMemory(llm=llm),
+        )
 
-# Function to parse and extract financial information
+def on_click_callback():
+    with get_openai_callback() as cb:
+        human_prompt = st.session_state.human_prompt
+        llm_response = st.session_state.conversation.run(human_prompt)
+        st.session_state.history.append(Message("human", human_prompt))
+        st.session_state.history.append(Message("ai", llm_response))
+        st.session_state.token_count += cb.total_tokens
+
 def extract_financial_info(text):
     salary_match = re.search(r'(\d+(\.\d+)?)\s*(جنيه|دولار|يورو|جنيه استرليني)?', text.lower())
     salary = float(salary_match.group(1)) if salary_match else None
     currency = salary_match.group(3).upper() if salary_match and salary_match.group(3) else 'جنيه'
     return salary, currency
 
-# Investment calculator
 def calculate_profit(investment_amount, investment_type, years=1):
     investment_type = investment_type.lower()
     annual_return = investment_options.get(investment_type)
@@ -59,7 +75,6 @@ def calculate_profit(investment_amount, investment_type, years=1):
     total_profit = investment_amount * (1 + annual_return) ** years - investment_amount
     return total_profit
 
-# Detailed breakdown of investment options
 def explain_investment_options():
     explanation = """
     💼 إليك بعض الخيارات الاستثمارية للنظر فيها:\n
@@ -72,7 +87,6 @@ def explain_investment_options():
     """.strip()
     return explanation
 
-# Provide more details about the chosen investment type
 def provide_investment_details(investment_type):
     details = investment_details.get(investment_type, "لا تتوفر لدينا معلومات إضافية حول هذا النوع من الاستثمار.")
     return details
@@ -80,61 +94,76 @@ def provide_investment_details(investment_type):
 def sanitize_text(text):
     return html.escape(text)
 
-# Chatbot logic handler
-def handle_input(user_message):
-    salary, currency = extract_financial_info(user_message)
-    
-    if salary:
-        st.session_state.history.append(Message("ai", f"\n راتبك هو {salary} {currency}."))
-        st.session_state.salary = salary
-
-        # Show investment options
-        st.session_state.history.append(Message("ai", sanitize_text(explain_investment_options())))
-
-        # Ask for investment type
-        st.session_state.history.append(Message("ai", "ما نوع الاستثمار الذي ترغب فيه؟ (الأسهم، السندات، العقارات، الصناديق المشتركة)"))
-    else:
-        st.session_state.history.append(Message("ai", "عذراً، لم أتمكن من استخراج معلومات الراتب. هل يمكنك المحاولة مرة أخرى؟"))
-
-# Streamlit Chatbot GUI
-st.title("Finance Chatbot 🤖")
-load_css()  # Load custom CSS
+load_css()
 initialize_session_state()
 
-# Display chat history
-for chat in st.session_state.history:
-    if chat.origin == "human":
-        st.markdown(f"<div style='text-align: left; direction: ltr;'><b>👤</b> {sanitize_text(chat.message)}</div>", unsafe_allow_html=True)
-    else:
-        st.markdown(f"<div style='text-align: right; direction: rtl;'><b>🤖</b> {sanitize_text(chat.message)}</div>", unsafe_allow_html=True)
+st.title("Finance Chatbot 🤖")
 
-# User input form
-with st.form("chat_form", clear_on_submit=True):
-    user_message = st.text_input("اكتب رسالتك هنا...")
-    submitted = st.form_submit_button("Send")
+chat_placeholder = st.container()
+prompt_placeholder = st.form("chat-form")
+credit_card_placeholder = st.empty()
 
-    # Handle user input and respond
-    if submitted and user_message:
-        st.session_state.history.append(Message("human", user_message))
-        handle_input(user_message)
+with chat_placeholder:
+    for chat in st.session_state.history:
+        div = f"""
+<div class="chat-row 
+    {'' if chat.origin == 'ai' else 'row-reverse'}">
+    <img class="chat-icon" src="app/static/{
+        'ai_icon.png' if chat.origin == 'ai' 
+                      else 'user_icon.png'}"
+         width=32 height=32>
+    <div class="chat-bubble
+    {'ai-bubble' if chat.origin == 'ai' else 'human-bubble'}">
+        &#8203;{chat.message}
+    </div>
+</div>
+        """
+        st.markdown(div, unsafe_allow_html=True)
+    
+    for _ in range(3):
+        st.markdown("")
 
-# If investment type was provided, ask for details about the investment
-if st.session_state.investment_type:
-    investment_type = st.selectbox("اختر نوع الاستثمار", list(investment_options.keys()))
-    st.session_state.history.append(Message("human", f"لقد اخترت {investment_type}."))
-    st.session_state.history.append(Message("ai", provide_investment_details(investment_type)))
+with prompt_placeholder:
+    st.markdown("**Chat**")
+    cols = st.columns((6, 1))
+    cols[0].text_input(
+        "Chat",
+        value="Hello bot",
+        label_visibility="collapsed",
+        key="human_prompt",
+    )
+    cols[1].form_submit_button(
+        "Submit", 
+        type="primary", 
+        on_click=on_click_callback, 
+    )
 
-# Show investment profit calculation after asking the relevant questions
-if st.session_state.salary and st.session_state.investment_type:
-    years = st.slider("كم عدد السنوات التي ترغب في الاستثمار خلالها؟", 1, 20)
-    investment_amount = st.number_input(f"كم من {st.session_state.salary} تريد استثماره؟", min_value=1.0)
+credit_card_placeholder.caption(f"""
+Used {st.session_state.token_count} tokens \n
+Debug Langchain conversation: 
+{st.session_state.conversation.memory.buffer}
+""")
 
-    if st.button("احسب الربح"):
-        profit = calculate_profit(investment_amount, st.session_state.investment_type, years)
-        if profit:
-            st.session_state.history.append(
-                Message("ai", f"بناءً على عائد سنوي قدره {investment_options[st.session_state.investment_type]} لمدة {years} سنوات، سيكون إجمالي الربح الخاص بك: {profit:.2f}.")
-            )
+components.html("""
+<script>
+const streamlitDoc = window.parent.document;
 
-# Debugging: Print session state
-st.write(st.session_state)
+const buttons = Array.from(
+    streamlitDoc.querySelectorAll('.stButton > button')
+);
+const submitButton = buttons.find(
+    el => el.innerText === 'Submit'
+);
+
+streamlitDoc.addEventListener('keydown', function(e) {
+    switch (e.key) {
+        case 'Enter':
+            submitButton.click();
+            break;
+    }
+});
+</script>
+""", 
+    height=0,
+    width=0,
+)
