@@ -1,7 +1,7 @@
 import re
 from dataclasses import dataclass
 import streamlit as st
-
+import html
 # Define some basic investment options with expected annual returns
 investment_options = {
     "الأسهم": 0.08,  # 8% annual return
@@ -76,6 +76,10 @@ def provide_investment_details(investment_type):
     details = investment_details.get(investment_type, "لا تتوفر لدينا معلومات إضافية حول هذا النوع من الاستثمار.")
     return details
 
+
+
+def sanitize_text(text):
+    return html.escape(text)
 # Chatbot logic handler
 def handle_input(user_message):
     salary, currency = extract_financial_info(user_message)
@@ -85,12 +89,14 @@ def handle_input(user_message):
         st.session_state.salary = salary
 
         # Show investment options
-        st.session_state.history.append(Message("ai", explain_investment_options()))
+        st.session_state.history.append(Message("ai", sanitize_text(explain_investment_options())))
 
         # Ask for investment type
         st.session_state.history.append(Message("ai", "ما نوع الاستثمار الذي ترغب فيه؟ (الأسهم، السندات، العقارات، الصناديق المشتركة)"))
     else:
         st.session_state.history.append(Message("ai", "عذراً، لم أتمكن من استخراج معلومات الراتب. هل يمكنك المحاولة مرة أخرى؟"))
+
+
 
 # Streamlit Chatbot GUI
 st.title("Finance Chatbot 🤖")
