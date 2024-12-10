@@ -92,7 +92,7 @@ def handle_input(user_message):
             st.session_state.history.append(Message("ai", "عذراً، لم أتمكن من استخراج معلومات الراتب. هل يمكنك المحاولة مرة أخرى؟"))
     elif st.session_state.investment_type is None:
         st.session_state.investment_type = user_message
-        st.session_state.history.append(Message("human", f"لقد اخترت {user_message}."))
+        st.session_state.history.append(Message("ai", f"لقد اخترت {user_message}."))
         if user_message.lower() not in investment_companies:
             st.session_state.history.append(Message("ai", "هذا النوع من الاستثمار غير مدعوم. الرجاء اختيار من (Microsoft، Apple، الشركات المحلية في مصر)."))
             st.session_state.investment_type = None
@@ -103,7 +103,7 @@ def handle_input(user_message):
         try:
             investment_amount = float(user_message)
             st.session_state.investment_amount = investment_amount
-            st.session_state.history.append(Message("human", f"أريد استثمار {investment_amount} جنيه."))
+    
             st.session_state.history.append(Message("ai", "كم عدد السنوات التي ترغب في الاستثمار خلالها؟"))
         except ValueError:
             st.session_state.history.append(Message("ai", "يرجى إدخال مبلغ استثمار صالح."))
@@ -111,7 +111,6 @@ def handle_input(user_message):
         try:
             years = int(user_message)
             st.session_state.years = years
-            st.session_state.history.append(Message("human", f"أريد الاستثمار لمدة {years} سنوات."))
             profit = calculate_company_profit(st.session_state.investment_amount, st.session_state.investment_type, years)
             if profit is not None:
                 st.session_state.history.append(
