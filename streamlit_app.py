@@ -122,7 +122,7 @@ def handle_input(user_message):
         try:
             years = int(user_message)
             st.session_state.years = years
-            st.session_state.history.append(Message("human", f"أريد الاستثمار لمدة {years} سنوات."))
+            
             profit = calculate_profit(st.session_state.investment_amount, st.session_state.investment_type, years)
             if profit is not None:
                 st.session_state.history.append(
