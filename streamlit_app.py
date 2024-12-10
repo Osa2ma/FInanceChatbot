@@ -82,19 +82,23 @@ def sanitize_text(text):
 
 # Chatbot logic handler
 def handle_input(user_message):
-    salary, currency = extract_financial_info(user_message)
-    
-    if salary:
-        st.session_state.history.append(Message("ai", f"\n راتبك هو {salary} {currency}."))
-        st.session_state.salary = salary
+    if st.session_state.salary is None:
+        salary, currency = extract_financial_info(user_message)
+        if salary:
+            st.session_state.history.append(Message("ai", f"\n راتبك هو {salary} {currency}."))
+            st.session_state.salary = salary
 
-        # Show investment options
-        st.session_state.history.append(Message("ai", sanitize_text(explain_investment_options())))
+            # Show investment options
+            st.session_state.history.append(Message("ai", sanitize_text(explain_investment_options())))
 
-        # Ask for investment type
-        st.session_state.history.append(Message("ai", "ما نوع الاستثمار الذي ترغب فيه؟ (الأسهم، السندات، العقارات، الصناديق المشتركة)"))
+            # Ask for investment type
+            st.session_state.history.append(Message("ai", "ما نوع الاستثمار الذي ترغب فيه؟ (الأسهم، السندات، العقارات، الصناديق المشتركة)"))
+        else:
+            st.session_state.history.append(Message("ai", "عذراً، لم أتمكن من استخراج معلومات الراتب. هل يمكنك المحاولة مرة أخرى؟"))
     else:
-        st.session_state.history.append(Message("ai", "عذراً، لم أتمكن من استخراج معلومات الراتب. هل يمكنك المحاولة مرة أخرى؟"))
+        st.session_state.investment_type = user_message
+        st.session_state.history.append(Message("human", f"لقد اخترت {user_message}."))
+        st.session_state.history.append(Message("ai", provide_investment_details(user_message)))
 
 # Streamlit Chatbot GUI
 
@@ -120,12 +124,6 @@ with st.form("chat_form", clear_on_submit=True):
         st.session_state.history.append(Message("human", user_message))
         handle_input(user_message)
         st.rerun()  # Force rerun after handling input
-
-# If investment type was provided, ask for details about the investment
-if st.session_state.investment_type:
-    investment_type = st.selectbox("اختر نوع الاستثمار", list(investment_options.keys()))
-    st.session_state.history.append(Message("human", f"لقد اخترت {investment_type}."))
-    st.session_state.history.append(Message("ai", provide_investment_details(investment_type)))
 
 # Show investment profit calculation after asking the relevant questions
 if st.session_state.salary and st.session_state.investment_type:
