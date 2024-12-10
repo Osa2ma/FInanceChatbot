@@ -39,6 +39,14 @@ def calculate_company_profit(investment_amount, company_name, years=1):
     total_profit = investment_amount * (1 + annual_return) ** years - investment_amount
     return total_profit
 
+def load_css():
+    try:
+        with open("static/styles.css", "r") as f:
+            css = f"<style>{f.read()}</style>"
+            st.markdown(css, unsafe_allow_html=True)
+    except FileNotFoundError:
+        pass  # Skip if the CSS file is not available
+
 # Chatbot logic handler update for companies
 def handle_input(user_message):
     if st.session_state.salary is None:
