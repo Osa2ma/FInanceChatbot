@@ -3,42 +3,27 @@ from dataclasses import dataclass
 import streamlit as st
 import html
 
-# Define some basic investment options with expected annual returns
-# Detailed investment options with individual company returns
+# Define annual returns for specific companies
 investment_companies = {
     "microsoft": 0.10,  # 10% annual return
     "apple": 0.12,      # 12% annual return
     "local companies in egypt": 0.07  # 7% annual return
 }
 
-# Provide details about specific companies
+# Detailed descriptions for companies
 company_details = {
     "microsoft": "شركة عالمية رائدة في مجال التكنولوجيا.",
     "apple": "أكبر شركة تصنيع للهواتف الذكية في العالم.",
     "local companies in egypt": "شركات محلية تعمل في قطاعات متنوعة مثل العقارات، الزراعة، والصناعة."
 }
 
-# Update investment explanation with companies
-def explain_investment_companies():
-    explanation = """
-    🏢 إليك بعض خيارات الاستثمار في الشركات:\n
-    🖥️ - Microsoft: العائد السنوي المتوقع 10%. استثمار في شركة رائدة في مجال التكنولوجيا.
-    📱 - Apple: العائد السنوي المتوقع 12%. استثمار في شركة عالمية لصناعة الهواتف والكمبيوترات.
-    🇪🇬 - الشركات المحلية في مصر: العائد السنوي المتوقع 7%. دعم الاقتصاد المحلي واستثمار في شركات نامية.
-    
-    اختر واحدة بناءً على أهدافك الاستثمارية.
-    """
-    return explanation
+@dataclass
+class Message:
+    """Class for keeping track of a chat message."""
+    origin: str  # "human" or "ai"
+    message: str
 
-# Profit calculator for specific companies
-def calculate_company_profit(investment_amount, company_name, years=1):
-    company_name = company_name.lower()
-    annual_return = investment_companies.get(company_name)
-    if annual_return is None:
-        return None
-    total_profit = investment_amount * (1 + annual_return) ** years - investment_amount
-    return total_profit
-
+# Load custom CSS
 def load_css():
     try:
         with open("static/styles.css", "r") as f:
@@ -47,7 +32,50 @@ def load_css():
     except FileNotFoundError:
         pass  # Skip if the CSS file is not available
 
-# Chatbot logic handler update for companies
+# Initialize session state to track history
+def initialize_session_state():
+    if "history" not in st.session_state:
+        st.session_state.history = []
+    if "investment_type" not in st.session_state:
+        st.session_state.investment_type = None
+    if "salary" not in st.session_state:
+        st.session_state.salary = None
+    if "investment_amount" not in st.session_state:
+        st.session_state.investment_amount = None
+    if "years" not in st.session_state:
+        st.session_state.years = None
+
+# Function to parse and extract financial information
+def extract_financial_info(text):
+    salary_match = re.search(r'(\d+(\.\d+)?)\s*(جنيه|دولار|يورو|جنيه استرليني)?', text.lower())
+    salary = float(salary_match.group(1)) if salary_match else None
+    currency = salary_match.group(3).upper() if salary_match and salary_match.group(3) else 'جنيه'
+    return salary, currency
+
+# Calculate profit for specific companies
+def calculate_company_profit(investment_amount, company_name, years=1):
+    company_name = company_name.lower()
+    annual_return = investment_companies.get(company_name)
+    if annual_return is None:
+        return None
+    total_profit = investment_amount * (1 + annual_return) ** years - investment_amount
+    return total_profit
+
+# Provide an explanation of investment options
+def explain_investment_companies():
+    explanation = """
+    🏢 إليك بعض خيارات الاستثمار في الشركات:\n
+    🖥️ - Microsoft: العائد السنوي المتوقع 10%. استثمار في شركة رائدة في مجال التكنولوجيا.
+    📱 - Apple: العائد السنوي المتوقع 12%. استثمار في شركة عالمية لصناعة الهواتف والكمبيوترات.
+    🇪🇬 - الشركات المحلية في مصر: العائد السنوي المتوقع 7%. دعم الاقتصاد المحلي واستثمار في شركات نامية.
+    """
+    return explanation.strip()
+
+# Sanitize text for HTML display
+def sanitize_text(text):
+    return html.escape(text)
+
+# Chatbot logic handler
 def handle_input(user_message):
     if st.session_state.salary is None:
         salary, currency = extract_financial_info(user_message)
@@ -94,8 +122,8 @@ def handle_input(user_message):
         except ValueError:
             st.session_state.history.append(Message("ai", "يرجى إدخال عدد سنوات صالح."))
 
-
 # Streamlit Chatbot GUI
+
 load_css()  # Load custom CSS
 initialize_session_state()
 
