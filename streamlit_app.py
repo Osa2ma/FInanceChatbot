@@ -42,6 +42,10 @@ def initialize_session_state():
         st.session_state.investment_type = None
     if "salary" not in st.session_state:
         st.session_state.salary = None
+    if "investment_amount" not in st.session_state:
+        st.session_state.investment_amount = None
+    if "years" not in st.session_state:
+        st.session_state.years = None
 
 # Function to parse and extract financial information
 def extract_financial_info(text):
@@ -74,7 +78,7 @@ def explain_investment_options():
 
 # Provide more details about the chosen investment type
 def provide_investment_details(investment_type):
-    details = investment_details.get(investment_type)
+    details = investment_details.get(investment_type, "لا تتوفر لدينا معلومات إضافية حول هذا النوع من الاستثمار.")
     return details
 
 def sanitize_text(text):
@@ -95,10 +99,25 @@ def handle_input(user_message):
             st.session_state.history.append(Message("ai", "ما نوع الاستثمار الذي ترغب فيه؟ (الأسهم، السندات، العقارات، الصناديق المشتركة)"))
         else:
             st.session_state.history.append(Message("ai", "عذراً، لم أتمكن من استخراج معلومات الراتب. هل يمكنك المحاولة مرة أخرى؟"))
-    else:
+    elif st.session_state.investment_type is None:
         st.session_state.investment_type = user_message
         st.session_state.history.append(Message("human", f"لقد اخترت {user_message}."))
         st.session_state.history.append(Message("ai", provide_investment_details(user_message)))
+        st.session_state.history.append(Message("ai", "كم من راتبك تريد استثماره؟"))
+    elif st.session_state.investment_amount is None:
+        investment_amount = float(user_message)
+        st.session_state.investment_amount = investment_amount
+        st.session_state.history.append(Message("human", f"أريد استثمار {investment_amount} جنيه."))
+        st.session_state.history.append(Message("ai", "كم عدد السنوات التي ترغب في الاستثمار خلالها؟"))
+    elif st.session_state.years is None:
+        years = int(user_message)
+        st.session_state.years = years
+        st.session_state.history.append(Message("human", f"أريد الاستثمار لمدة {years} سنوات."))
+        profit = calculate_profit(st.session_state.investment_amount, st.session_state.investment_type, years)
+        if profit:
+            st.session_state.history.append(
+                Message("ai", f"بناءً على عائد سنوي قدره {investment_options[st.session_state.investment_type]} لمدة {years} سنوات، سيكون إجمالي الربح الخاص بك: {profit:.2f} جنيه.")
+            )
 
 # Streamlit Chatbot GUI
 
@@ -124,18 +143,6 @@ with st.form("chat_form", clear_on_submit=True):
         st.session_state.history.append(Message("human", user_message))
         handle_input(user_message)
         st.rerun()  # Force rerun after handling input
-
-# Show investment profit calculation after asking the relevant questions
-if st.session_state.salary and st.session_state.investment_type:
-    years = st.slider("كم عدد السنوات التي ترغب في الاستثمار خلالها؟", 1, 20)
-    investment_amount = st.number_input(f"كم من {st.session_state.salary} تريد استثماره؟", min_value=1.0)
-
-    if st.button("احسب الربح"):
-        profit = calculate_profit(investment_amount, st.session_state.investment_type, years)
-        if profit:
-            st.session_state.history.append(
-                Message("ai", f"بناءً على عائد سنوي قدره {investment_options[st.session_state.investment_type]} لمدة {years} سنوات، سيكون إجمالي الربح الخاص بك: {profit:.2f}.")
-            )
 
 # Debugging: Print session state
 st.write(st.session_state)
