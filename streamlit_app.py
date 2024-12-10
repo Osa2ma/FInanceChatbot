@@ -105,7 +105,7 @@ def handle_input(user_message):
         try:
             investment_amount = float(user_message)
             st.session_state.investment_amount = investment_amount
-            
+           
             st.session_state.history.append(Message("ai", "كم عدد السنوات التي ترغب في الاستثمار خلالها؟"))
         except ValueError:
             st.session_state.history.append(Message("ai", "يرجى إدخال مبلغ استثمار صالح."))
@@ -113,7 +113,7 @@ def handle_input(user_message):
         try:
             years = int(user_message)
             st.session_state.years = years
-            
+    
             profit = calculate_company_profit(
                 st.session_state.investment_amount,
                 st.session_state.investment_type,
@@ -151,4 +151,10 @@ with st.form("chat_form", clear_on_submit=True):
     submitted = st.form_submit_button("Send")
 
     # Handle user input and respond
-    if submitted and user_messa
+    if submitted and user_message:
+        st.session_state.history.append(Message("human", user_message))
+        handle_input(user_message)
+        st.rerun()  # Force rerun after handling input
+
+# Debugging: Print session state
+st.write(st.session_state)
