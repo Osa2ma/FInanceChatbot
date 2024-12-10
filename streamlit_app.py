@@ -101,22 +101,31 @@ def handle_input(user_message):
             st.session_state.history.append(Message("ai", "عذراً، لم أتمكن من استخراج معلومات الراتب. هل يمكنك المحاولة مرة أخرى؟"))
     elif st.session_state.investment_type is None:
         st.session_state.investment_type = user_message
-        st.session_state.history.append(Message("ai", f"لقد اخترت {user_message}."))
+        st.session_state.history.append(Message("human", f"لقد اخترت {user_message}."))
         st.session_state.history.append(Message("ai", provide_investment_details(user_message)))
         st.session_state.history.append(Message("ai", "كم من راتبك تريد استثماره؟"))
     elif st.session_state.investment_amount is None:
-        investment_amount = float(user_message)
-        st.session_state.investment_amount = investment_amount
-        st.session_state.history.append(Message("ai", "كم عدد السنوات التي ترغب في الاستثمار خلالها؟"))
+        try:
+            investment_amount = float(user_message)
+            st.session_state.investment_amount = investment_amount
+            st.session_state.history.append(Message("human", f"أريد استثمار {investment_amount} جنيه."))
+            st.session_state.history.append(Message("ai", "كم عدد السنوات التي ترغب في الاستثمار خلالها؟"))
+        except ValueError:
+            st.session_state.history.append(Message("ai", "يرجى إدخال مبلغ استثمار صالح."))
     elif st.session_state.years is None:
-        years = int(user_message)
-        st.session_state.years = years
-        st.session_state.history.append(Message("human", f"أريد الاستثمار لمدة {years} سنوات."))
-        profit = calculate_profit(st.session_state.investment_amount, st.session_state.investment_type, years)
-        if profit:
-            st.session_state.history.append(
-                Message("ai", f"بناءً على عائد سنوي قدره {investment_options[st.session_state.investment_type]} لمدة {years} سنوات، سيكون إجمالي الربح الخاص بك: {profit:.2f} جنيه.")
-            )
+        try:
+            years = int(user_message)
+            st.session_state.years = years
+            st.session_state.history.append(Message("human", f"أريد الاستثمار لمدة {years} سنوات."))
+            profit = calculate_profit(st.session_state.investment_amount, st.session_state.investment_type, years)
+            if profit is not None:
+                st.session_state.history.append(
+                    Message("ai", f"بناءً على عائد سنوي قدره {investment_options[st.session_state.investment_type]} لمدة {years} سنوات، سيكون إجمالي الربح الخاص بك: {profit:.2f} جنيه.")
+                )
+            else:
+                st.session_state.history.append(Message("ai", "عذراً، حدث خطأ في حساب الربح."))
+        except ValueError:
+            st.session_state.history.append(Message("ai", "يرجى إدخال عدد سنوات صالح."))
 
 # Streamlit Chatbot GUI
 
@@ -141,7 +150,7 @@ with st.form("chat_form", clear_on_submit=True):
     if submitted and user_message:
         st.session_state.history.append(Message("human", user_message))
         handle_input(user_message)
-        st.rerun()  # Force rerun after handling input
+        st.experimental_rerun()  # Force rerun after handling input
 
 # Debugging: Print session state
 st.write(st.session_state)
