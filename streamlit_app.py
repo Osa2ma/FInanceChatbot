@@ -3,18 +3,20 @@ from dataclasses import dataclass
 import streamlit as st
 import html
 
-# Define annual returns for specific companies
-investment_companies = {
-    "microsoft": 0.10,  # 10% annual return
-    "apple": 0.12,      # 12% annual return
-    "local companies in egypt": 0.07  # 7% annual return
+# Define some basic investment options with expected annual returns
+investment_options = {
+    "الأسهم": 0.08,  # 8% annual return
+    "السندات": 0.04,  # 4% annual return
+    "العقارات": 0.06,  # 6% annual return
+    "الصناديق المشتركة": 0.05  # 5% annual return
 }
 
-# Detailed descriptions for companies
-company_details = {
-    "microsoft": "شركة عالمية رائدة في مجال التكنولوجيا.",
-    "apple": "أكبر شركة تصنيع للهواتف الذكية في العالم.",
-    "local companies in egypt": "شركات محلية تعمل في قطاعات متنوعة مثل العقارات، الزراعة، والصناعة."
+# Detailed breakdown of investment types (example companies or assets)
+investment_details = {
+    "الأسهم": "تستثمر في شركات مثل Apple، Microsoft، أو الشركات المحلية.",
+    "السندات": "تستثمر في سندات حكومية مثل السندات الأمريكية أو الأوروبية.",
+    "العقارات": "يمكنك شراء عقار سكني أو استثماري في مناطق نامية مثل العاصمة الإدارية الجديدة أو القاهرة الجديدة.",
+    "الصناديق المشتركة": "استثمارات متنوعة في أسهم وسندات مختلفة لتحقيق توازن في المخاطر."
 }
 
 @dataclass
@@ -52,26 +54,35 @@ def extract_financial_info(text):
     currency = salary_match.group(3).upper() if salary_match and salary_match.group(3) else 'جنيه'
     return salary, currency
 
-# Calculate profit for specific companies
-def calculate_company_profit(investment_amount, company_name, years=1):
-    company_name = company_name.lower()
-    annual_return = investment_companies.get(company_name)
+# Investment calculator
+def calculate_profit(investment_amount, investment_type, years=1):
+    investment_type = investment_type.lower()
+    annual_return = investment_options.get(investment_type)
+    st.write(f"Calculating profit with: {investment_amount=}, {investment_type=}, {annual_return=}, {years=}")
     if annual_return is None:
         return None
     total_profit = investment_amount * (1 + annual_return) ** years - investment_amount
+    st.write(f"Total profit: {total_profit}")
     return total_profit
 
-# Provide an explanation of investment options
-def explain_investment_companies():
+# Detailed breakdown of investment options
+def explain_investment_options():
     explanation = """
-    🏢 إليك بعض خيارات الاستثمار في الشركات:\n
-    🖥️ - Microsoft: العائد السنوي المتوقع 10%. استثمار في شركة رائدة في مجال التكنولوجيا.
-    📱 - Apple: العائد السنوي المتوقع 12%. استثمار في شركة عالمية لصناعة الهواتف والكمبيوترات.
-    🇪🇬 - الشركات المحلية في مصر: العائد السنوي المتوقع 7%. دعم الاقتصاد المحلي واستثمار في شركات نامية.
-    """
-    return explanation.strip()
+    💼 إليك بعض الخيارات الاستثمارية للنظر فيها:\n
+    📈 - الأسهم: العائد السنوي المتوقع 8%. مخاطرة عالية، ولكن عوائد محتملة عالية.
+    💵 - السندات: العائد السنوي المتوقع 4%. مخاطرة أقل، وعوائد ثابتة.
+    🏠 - العقارات: العائد السنوي المتوقع 6%. استثمار آمن، مع نمو طويل الأجل.
+    📊 - الصناديق المشتركة: العائد السنوي المتوقع 5%. استثمارات متنوعة ومخاطرة معتدلة.
+    
+    يمكنك اختيار واحدة بناءً على مستوى المخاطرة الذي تتحمله وأهدافك.
+    """.strip()
+    return explanation
 
-# Sanitize text for HTML display
+# Provide more details about the chosen investment type
+def provide_investment_details(investment_type):
+    details = investment_details.get(investment_type, "لا تتوفر لدينا معلومات إضافية حول هذا النوع من الاستثمار.")
+    return details
+
 def sanitize_text(text):
     return html.escape(text)
 
@@ -83,21 +94,21 @@ def handle_input(user_message):
             st.session_state.history.append(Message("ai", f"\n راتبك هو {salary} {currency}."))
             st.session_state.salary = salary
 
-            # Show investment options including companies
-            st.session_state.history.append(Message("ai", sanitize_text(explain_investment_companies())))
+            # Show investment options
+            st.session_state.history.append(Message("ai", sanitize_text(explain_investment_options())))
 
             # Ask for investment type
-            st.session_state.history.append(Message("ai", "ما الشركة أو نوع الاستثمار الذي ترغب فيه؟ (Microsoft، Apple، الشركات المحلية في مصر)"))
+            st.session_state.history.append(Message("ai", "ما نوع الاستثمار الذي ترغب فيه؟ (الأسهم، السندات، العقارات، الصناديق المشتركة)"))
         else:
             st.session_state.history.append(Message("ai", "عذراً، لم أتمكن من استخراج معلومات الراتب. هل يمكنك المحاولة مرة أخرى؟"))
     elif st.session_state.investment_type is None:
         st.session_state.investment_type = user_message
         st.session_state.history.append(Message("ai", f"لقد اخترت {user_message}."))
-        if user_message.lower() not in investment_companies:
-            st.session_state.history.append(Message("ai", "هذا النوع من الاستثمار غير مدعوم. الرجاء اختيار من (Microsoft، Apple، الشركات المحلية في مصر)."))
+        if user_message not in investment_options:
+            st.session_state.history.append(Message("ai", "نوع الاستثمار غير مدعوم. الرجاء اختيار من (الأسهم، السندات، العقارات، الصناديق المشتركة)."))
             st.session_state.investment_type = None
         else:
-            st.session_state.history.append(Message("ai", company_details.get(user_message.lower(), "لا توجد تفاصيل عن هذه الشركة.")))
+            st.session_state.history.append(Message("ai", provide_investment_details(user_message)))
             st.session_state.history.append(Message("ai", "كم من راتبك تريد استثماره؟"))
     elif st.session_state.investment_amount is None:
         try:
@@ -111,10 +122,11 @@ def handle_input(user_message):
         try:
             years = int(user_message)
             st.session_state.years = years
-            profit = calculate_company_profit(st.session_state.investment_amount, st.session_state.investment_type, years)
+            st.session_state.history.append(Message("human", f"أريد الاستثمار لمدة {years} سنوات."))
+            profit = calculate_profit(st.session_state.investment_amount, st.session_state.investment_type, years)
             if profit is not None:
                 st.session_state.history.append(
-                    Message("ai", f"إذا استثمرت في {st.session_state.investment_type} بعائد سنوي قدره {investment_companies[st.session_state.investment_type.lower()] * 100:.1f}% لمدة {years} سنوات، سيكون إجمالي الربح الخاص بك: {profit:.2f} جنيه.")
+                    Message("ai", f"بناءً على عائد سنوي قدره {investment_options[st.session_state.investment_type] * 100:.1f}% لمدة {years} سنوات، سيكون إجمالي الربح الخاص بك: {profit:.2f} جنيه.")
                 )
             else:
                 st.session_state.history.append(Message("ai", "عذراً، حدث خطأ في حساب الربح."))
@@ -122,7 +134,6 @@ def handle_input(user_message):
             st.session_state.history.append(Message("ai", "يرجى إدخال عدد سنوات صالح."))
 
 # Streamlit Chatbot GUI
-
 load_css()  # Load custom CSS
 initialize_session_state()
 
