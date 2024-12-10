@@ -74,7 +74,7 @@ def explain_investment_options():
 
 # Provide more details about the chosen investment type
 def provide_investment_details(investment_type):
-    details = investment_details.get(investment_type, "لا تتوفر لدينا معلومات إضافية حول هذا النوع من الاستثمار.")
+    details = investment_details.get(investment_type)
     return details
 
 def sanitize_text(text):
