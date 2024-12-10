@@ -78,7 +78,7 @@ def explain_investment_options():
 
 # Provide more details about the chosen investment type
 def provide_investment_details(investment_type):
-    details = investment_details.get(investment_type)
+    details = investment_details.get(investment_type, "لا تتوفر لدينا معلومات إضافية حول هذا النوع من الاستثمار.")
     return details
 
 def sanitize_text(text):
@@ -107,7 +107,6 @@ def handle_input(user_message):
     elif st.session_state.investment_amount is None:
         investment_amount = float(user_message)
         st.session_state.investment_amount = investment_amount
-
         st.session_state.history.append(Message("ai", "كم عدد السنوات التي ترغب في الاستثمار خلالها؟"))
     elif st.session_state.years is None:
         years = int(user_message)
