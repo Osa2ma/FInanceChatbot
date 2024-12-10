@@ -150,7 +150,7 @@ with st.form("chat_form", clear_on_submit=True):
     if submitted and user_message:
         st.session_state.history.append(Message("human", user_message))
         handle_input(user_message)
-        st.experimental_rerun()  # Force rerun after handling input
+        st.rerun()  # Force rerun after handling input
 
 # Debugging: Print session state
 st.write(st.session_state)
